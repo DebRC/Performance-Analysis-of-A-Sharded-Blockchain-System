@@ -5,6 +5,7 @@ from glob import glob
 import os, random, sys, random
 from dotenv import load_dotenv
 from user import User
+from performance import *
 
 load_dotenv()
 
@@ -117,3 +118,63 @@ def prepareTxn(sender, receiver):
     transaction.signature = sender.signer.sign(transaction_computer.compute_bytes_for_signing(transaction))
     
     return transaction
+
+def saveTxnList(txnHashList,t):
+    """
+    Save the transaction hash
+    """
+    os.makedirs("./user_wallets", exist_ok=True)
+    f=open(f"./user_wallets/txn_list.csv","a")
+    for hash in txnHashList:
+        f.write(f"{hash},{t},-1,-1\n")
+    f.close()
+
+def updateTxnList():
+    """
+    Update the transaction list
+    """
+    try:
+        f=open(f"./user_wallets/txn_list.csv","r")
+    except:
+        return
+    txns=f.readlines()
+    f.close()
+    f=open(f"./user_wallets/txn_list.csv","w")
+    for txn in txns:
+        txnHash,t,p,c=txn.strip().split(",")
+        p,c=measureTime(txnHash)
+        f.write(f"{txnHash},{t},{p},{c}\n")
+    f.close()
+    
+def printTxnListDetails():
+    """
+    Print the transaction(s) details
+    """
+    print("Printing Transactions Details :: ")
+    try:
+        f=open(f"./user_wallets/txn_list.csv","r")
+    except:
+        return
+    txns=f.readlines()
+    f.close()
+    for txn in txns:
+        txnHash,t,p,c=txn.strip().split(",")
+        # print(txnHash,"::",t,"->",p,"->",c)
+        url = f"{os.getenv('PROXY_NETWORK')}/v1.0/transaction/{txnHash}?withResults=true"
+        response = requests.get(url)
+
+def printTxnListTimestamp():
+    """
+    Print the transaction(s) timestamp
+    """
+    print("Printing Transactions Timestamps :: ")
+    try:
+        f=open(f"./user_wallets/txn_list.csv","r")
+    except:
+        return
+    txns=f.readlines()
+    f.close()
+    for txn in txns:
+        txnHash,t,p,c=txn.strip().split(",")
+        print(txnHash,"::",t,"->",p,"->",c)
+    

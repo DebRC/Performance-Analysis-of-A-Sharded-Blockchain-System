@@ -36,20 +36,20 @@ class Users:
             self.validators.append(user)
             
     def initiateOldUsers(self):
-        # try:
-        with open("./user_wallets/user_list.csv", "r") as f:
-            for line in f:
-                username, address = line.strip().split(",")
-                user = User()
-                user.username=username
-                user.address=Address.new_from_bech32(address)
-                user.shardID=user.computeShardID()
-                user.signer = UserSigner.from_pem_file(Path(f"./user_wallets/{username}_wallet.pem"))
-                user.secret_key=user.signer.secret_key.hex()
-                user.public_key=user.signer.secret_key.generate_public_key().hex()
-                self.addedUsers.append(user)
-        # except FileNotFoundError:
-        #     return
+        try:
+            with open("./user_wallets/user_list.csv", "r") as f:
+                for line in f:
+                    username, address = line.strip().split(",")
+                    user = User()
+                    user.username=username
+                    user.address=Address.new_from_bech32(address)
+                    user.shardID=user.computeShardID()
+                    user.signer = UserSigner.from_pem_file(Path(f"./user_wallets/{username}_wallet.pem"))
+                    user.secret_key=user.signer.secret_key.hex()
+                    user.public_key=user.signer.secret_key.generate_public_key().hex()
+                    self.addedUsers.append(user)
+        except FileNotFoundError:
+            return
     
     def __generateUser(self, username):
         user=User()
