@@ -159,7 +159,6 @@ def printTxnListDetails():
     f.close()
     for txn in txns:
         txnHash,t,p,c=txn.strip().split(",")
-        # print(txnHash,"::",t,"->",p,"->",c)
         url = f"{os.getenv('PROXY_NETWORK')}/v1.0/transaction/{txnHash}?withResults=true"
         response = requests.get(url)
 

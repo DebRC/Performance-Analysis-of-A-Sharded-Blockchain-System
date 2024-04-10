@@ -2,21 +2,23 @@ from user import *
 from transaction import *
 from wallet import *
 from performance import *
+from validator import *
 
 users = Users()
-users.initiateValidators()
+users.initiateValidatorsAccount()
 users.initiateOldUsers()
 
 while(True):
     print()
     print("Enter 1 to Create Users")
-    print("Enter 2 to Print Users and Validators")
-    print("Enter 3 to Print Validators by Shard")
-    print("Enter 4 to Print Users by Shard")
-    print("Enter 5 to Send Transaction")
-    print("Enter 6 to Print Sent Transactions Timestamp")
-    print("Enter 7 to Print Sent Transactions Details")
-    print("Enter 8 to exit")
+    print("Enter 2 to Print Accounts")
+    print("Enter 3 to Print Accounts by Shard")
+    print("Enter 4 to Print Accounts Balance")
+    print("Enter 5 to Print Validators by Shard")
+    print("Enter 6 to Send Transaction")
+    print("Enter 7 to Print Sent Transactions Timestamp")
+    print("Enter 8 to Print Sent Transactions Details")
+    print("Enter 9 to exit")
     choice = int(input("Enter Your Choice :: "))
     print()
     if choice == 1:
@@ -25,10 +27,12 @@ while(True):
     elif choice == 2:
         users.printUsers()
     elif choice == 3:
-        users.printValidatorByShard()
+        users.printAccountsByShard()
     elif choice == 4:
-        users.printUserByShard()
+        users.printAccountsBalance()
     elif choice == 5:
+        printValidatorsByShard()
+    elif choice == 6:
         print("1. Send Mixed Transaction")
         print("2. Send Intra-Shard Transaction")
         print("3. Send Cross-Shard Transaction")
@@ -45,15 +49,15 @@ while(True):
             print("Invalid choice")
             continue
         saveTxnList(txnsHashList,t)
-    elif choice == 6:
-        print("Printing sent Transactions :: ")
-        updateTxnList()
-        printTxnListTimestamp()
     elif choice == 7:
         print("Printing sent Transactions :: ")
         updateTxnList()
-        printTxnListDetails()
+        printTxnListTimestamp()
     elif choice == 8:
+        print("Printing sent Transactions :: ")
+        updateTxnList()
+        printTxnListDetails()
+    elif choice == 9:
         break
     else:
         print("Invalid choice")
