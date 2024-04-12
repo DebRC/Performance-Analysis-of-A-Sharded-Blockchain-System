@@ -4,26 +4,26 @@ from multiversx_sdk_wallet import *
 from glob import glob
 import os, random, sys, random
 from dotenv import load_dotenv
-from user import User
+from user import *
 from performance import *
 
 load_dotenv()
 
-def sendTxn(users, numOfTxn=1):
+def sendTxn(users: Users, numOfTxn=1):
     """
     Sends transaction(s) 
     between any two random users
     of any two random shards
     """
     print(f"Sending {numOfTxn} Transactions...")
-    addedUsers = users.addedUsers
+    accounts = users.usersAccount+users.validatorsAccount
     txns=[]
     for _ in range(numOfTxn):
         # Select a random sender and receiver
-        sender: User = random.choice(addedUsers)
-        receiver: User = random.choice(addedUsers)
+        sender: User = random.choice(accounts)
+        receiver: User = random.choice(accounts)
         while sender == receiver:
-            receiver = random.choice(addedUsers)
+            receiver = random.choice(accounts)
         
         txns.append(prepareTxn(sender, receiver))
         # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
@@ -35,7 +35,7 @@ def sendTxn(users, numOfTxn=1):
     print(f"Number of transactions sent successfully :: {hashes[0]}")
     return list(hashes[1].values())
 
-def sendIntraShardTxn(users, numOfTxn=1):
+def sendIntraShardTxn(users: Users, numOfTxn=1):
     """
     Sends a transaction between any two random users
     of a particular shard chosen randomly
@@ -44,7 +44,7 @@ def sendIntraShardTxn(users, numOfTxn=1):
     txns=[]
     for _ in range(numOfTxn):
         # Get a random shard to pick up accounts from
-        usersByShard = users.returnUserListByShard()
+        usersByShard = users.returnAccountsByShard()
         getRandomShard = random.choice(list(usersByShard.keys()))
         
         # Check if there are atleast 2 users in the shard
@@ -74,13 +74,13 @@ def sendCrossShardTxn(users, numOfTxn=1):
     """
     print(f"Sending {numOfTxn} Transactions...")
     txns=[]
-    addedUsers = users.addedUsers
+    accounts = users.usersAccount+users.validatorsAccount
     for _ in range(numOfTxn):
         # Select a random sender and receiver
-        sender: User = random.choice(addedUsers)
-        receiver: User = random.choice(addedUsers)
+        sender: User = random.choice(accounts)
+        receiver: User = random.choice(accounts)
         while sender.shardID == receiver.shardID:
-            receiver = random.choice(addedUsers)
+            receiver = random.choice(accounts)
         # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
         
         txns.append(prepareTxn(sender, receiver))

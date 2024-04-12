@@ -18,7 +18,7 @@ def generateWallet(username):
     return pem
     
 def fundWallet(users,receiver):
-    selectedValidator=random.choice(users.validators)
+    selectedValidator=random.choice(users.validatorsAccount)
     txn=prepareFunding(selectedValidator, receiver)
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
     hashes = provider.send_transactions([txn])
@@ -41,7 +41,7 @@ def prepareFunding(sender, receiver):
         sender=sender.address.to_bech32(),
         receiver=receiver.address.to_bech32(),
         value=99900000000000000000000,
-        gas_limit=70000,
+        gas_limit=7000000000,
         chain_id="local-testnet",
     )
     

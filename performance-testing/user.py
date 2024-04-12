@@ -5,8 +5,6 @@ from collections import defaultdict
 import os, random,requests
 from dotenv import load_dotenv
 from wallet import *
-from validator import *
-import time
 
 load_dotenv()
 
@@ -96,7 +94,7 @@ class Users:
         for user in self.validatorsAccount:
             print(f"{user.username} :: {user.getBalance()}")
 
-    def printUsers(self):
+    def printAccounts(self):
         print("Printing Accounts :: ")
         for user in self.usersAccount:
             print(user)
@@ -128,4 +126,4 @@ class User:
             print("Error:", response.status_code)
         
     def __str__(self) -> str:
-        return f"Username: {self.username}\nbech32: {self.address.to_bech32()}\nShardID: {self.getShardID()}\nSecret-Key: {self.secret_key}\nPublic-Key: {self.public_key}\nBalance: {self.getBalance()}"
+        return f"Username: {self.username}\nbech32: {self.address.to_bech32()}\nShardID: {self.getShardID()}\nSecret-Key: {self.secret_key}\nPublic-Key: {self.public_key}\nBalance: {self.getBalance()}\n"
