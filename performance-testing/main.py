@@ -12,6 +12,8 @@ users.initiateOldUsers()
 nodes = Nodes()
 nodes.initiateNodes()
 
+# sendTxnFromSender(users)
+
 while(True):
     print()
     print("Enter 1 to Create Users")
@@ -21,9 +23,13 @@ while(True):
     print("Enter 5 to Print Nodes")
     print("Enter 6 to Print Nodes by Shard")
     print("Enter 7 to Send Transaction")
-    print("Enter 8 to Print Sent Transactions Timestamp")
-    print("Enter 9 to Print Sent Transactions Details")
-    print("Enter 10 to exit")
+    print("Enter 8 to Update Transactions Details")
+    print("Enter 9 to Print Sent Transactions Timestamp")
+    print("Enter 10 to Print Sent Transactions Details")
+    print("Enter 11 to print TPR")
+    print("Enter 12 to print TCR")
+    print("Enter 13 to Send Max Number of Transactions")
+    print("Enter 14 to exit")
     choice = int(input("Enter Your Choice :: "))
     print()
     if choice == 1:
@@ -45,26 +51,29 @@ while(True):
         print("3. Send Cross-Shard Transaction")
         x=int(input("Enter the type of transaction :: "))
         n=int(input("Enter number of transactions :: "))
-        t=time.time()
         if x==1:
-            txnsHashList=sendTxn(users, n)
+            sendTxn(users, n)
         elif x==2:
-            txnsHashList=sendIntraShardTxn(users, n)
+            sendIntraShardTxn(users, n)
         elif x==3:
-            txnsHashList=sendCrossShardTxn(users, n)
+            sendCrossShardTxn(users, n)
         else:
             print("Invalid choice")
             continue
-        saveTxnList(txnsHashList,t)
     elif choice == 8:
-        print("Printing sent Transactions :: ")
         updateTxnList()
-        printTxnListTimestamp()
     elif choice == 9:
-        print("Printing sent Transactions :: ")
-        updateTxnList()
-        printTxnListDetails()
+        printTxnListTimestamp()
     elif choice == 10:
+        txnHash=input("Enter the transaction hash :: ")
+        printTxnListDetails(txnHash)
+    elif choice == 11:
+        print("TPR ::",calculateTPR())
+    elif choice == 12:
+        print("TCR ::",calculateTCR())
+    elif choice == 13:
+        sendMaxTxns(users)
+    elif choice == 14:
         break
     else:
         print("Invalid choice")

@@ -16,32 +16,65 @@ def sendTxn(users: Users, numOfTxn=1):
     of any two random shards
     """
     print(f"Sending {numOfTxn} Transactions...")
+    
+    # Get all the accounts
     accounts = users.usersAccount+users.validatorsAccount
     txns=[]
+    
+    # Map for counting no of transactions (nonce) sent per account
+    nonceCount=defaultdict(int)
     for _ in range(numOfTxn):
-        # Select a random sender and receiver
+        # Select a random sender
         sender: User = random.choice(accounts)
+        
+        # Check if the sender has reached the maximum nonce
+        tries=0
+        while(nonceCount[sender.username]==int(os.getenv("MAX_NONCE")) and tries<10):
+            sender: User = random.choice(accounts)
+            tries+=1
+        if tries==10:
+            continue
+        
+        # Select a random receiver
         receiver: User = random.choice(accounts)
         while sender == receiver:
             receiver = random.choice(accounts)
-        
+            
+        # Prepare the transaction
         txns.append(prepareTxn(sender, receiver))
-        # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
+        
+        # Increment the nonce count
+        nonceCount[sender.username]+=1
+        # print(f"Sender: {sender.username}, Receiver: {receiver.username}, Nonce: {txns[-1].nonce}")
     
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
     hashes = provider.send_transactions(txns)
     
-    print(f"Number of transactions sent successfully :: {hashes[0]}")
-    return list(hashes[1].values())
+    # Comment if performance script running in different machine
+    time.sleep(30)
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+    
+    # Comment if performance script running in different machine
+    updateTxnList()
+    
+    print(f"Number of transactions sent successfully :: {hashes[0]}") 
 
 def sendIntraShardTxn(users: Users, numOfTxn=1):
     """
     Sends a transaction between any two random users
     of a particular shard chosen randomly
     """
-    print(f"Sending {numOfTxn} Transactions...")
+    print(f"Sending {numOfTxn} Intra-Shard Transactions...")
     txns=[]
+    
+    # Map for counting no of transactions (nonce) sent per account
+    nonceCount=defaultdict(int)
     for _ in range(numOfTxn):
         # Get a random shard to pick up accounts from
         usersByShard = users.returnAccountsByShard()
@@ -51,46 +84,143 @@ def sendIntraShardTxn(users: Users, numOfTxn=1):
         while(len(usersByShard[getRandomShard])<2):
             getRandomShard = random.choice(list(usersByShard.keys()))
         
-        # Select a random sender and receiver
+        # Select a random sender
         sender: User = random.choice(usersByShard[getRandomShard])
+        
+        # Check if the sender has reached the maximum nonce
+        tries=0
+        while(nonceCount[sender.username]==int(os.getenv("MAX_NONCE")) and tries<10):
+            sender: User = random.choice(usersByShard[getRandomShard])
+            tries+=1
+        if tries==10:
+            continue
+            
+        # Select a random receiver
         receiver: User = random.choice(usersByShard[getRandomShard])
         while sender == receiver:
             receiver = random.choice(usersByShard[getRandomShard])
             
+        # Prepare the transaction
         txns.append(prepareTxn(sender, receiver))
+        
+        # Increment the nonce count
+        nonceCount[sender.username]+=1
         # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
         
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
     hashes = provider.send_transactions(txns)
     
+    # Comment if performance script running in different machine
+    time.sleep(30)
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+    
+    # Comment if performance script running in different machine
+    updateTxnList()
+    
     print(f"Number of transactions sent successfully :: {hashes[0]}")
-    return list(hashes[1].values())
 
 def sendCrossShardTxn(users, numOfTxn=1):
     """
     Sends a transaction between any two random users
     of different shards chosen randomly
     """
-    print(f"Sending {numOfTxn} Transactions...")
+    print(f"Sending {numOfTxn} Cross-Shard Transactions...")
     txns=[]
+    
+    # Get all the accounts
     accounts = users.usersAccount+users.validatorsAccount
+    
+    # Map for counting no of transactions (nonce) sent per account
+    nonceCount=defaultdict(int)
     for _ in range(numOfTxn):
-        # Select a random sender and receiver
+        # Select a random sender
         sender: User = random.choice(accounts)
+        
+        # Check if the sender has reached the maximum nonce
+        tries=0
+        while(nonceCount[sender.username]==int(os.getenv("MAX_NONCE")) and tries<10):
+            # Select a new sender
+            sender: User = random.choice(accounts)
+            tries+=1
+        if tries==10:
+            continue
+        
+        # Select a random receiver
         receiver: User = random.choice(accounts)
-        while sender.shardID == receiver.shardID:
+        while sender.getShardID() == receiver.getShardID():
             receiver = random.choice(accounts)
+        
         # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
         
+        # Prepare the transaction
         txns.append(prepareTxn(sender, receiver))
+        
+        # Increment the nonce count
+        nonceCount[sender.username]+=1
     
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
     hashes = provider.send_transactions(txns)
     
+    # Comment if performance script running in different machine
+    time.sleep(30)
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+
+    # Comment if performance script running in different machine
+    updateTxnList()
+    
     print(f"Number of transactions sent successfully :: {hashes[0]}")
-    return list(hashes[1].values())
+
+def sendMaxTxns(users):
+    """
+    Sends maximum number of transactions
+    """
+    print("Sending Maximum Number of Transactions...")
+    
+    # Get all the accounts
+    accounts = users.usersAccount+users.validatorsAccount
+    txns=[]
+    
+    # Take each sender
+    for sender in accounts:
+        # Send maximum number of transactions
+        for _ in range(int(os.getenv("MAX_NONCE"))):
+            # Select a random receiver
+            receiver: User = random.choice(accounts)
+            while sender == receiver:
+                receiver = random.choice(accounts)
+                
+            # Prepare the transaction
+            txns.append(prepareTxn(sender, receiver))
+            
+    # Get the proxy network provider
+    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
+    hashes = provider.send_transactions(txns)
+    
+    # Comment if performance script running in different machine
+    # time.sleep(30)
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+
+    # Comment if performance script running in different machine
+    # updateTxnList()
+    
+    print(f"Number of transactions sent successfully :: {hashes[0]}")
 
 def prepareTxn(sender, receiver):
     """
@@ -101,17 +231,11 @@ def prepareTxn(sender, receiver):
     transaction = Transaction(
         sender=sender.address.to_bech32(),
         receiver=receiver.address.to_bech32(),
-        gas_limit=70000,
+        gas_limit=int(os.getenv('GAS_LIMIT')),
         chain_id="local-testnet",
     )
     
-    # Get the proxy network provider
-    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
-    
-    # Get the nonce of the txn sender
-    sender_on_network = provider.get_account(sender.address)
-    nonce_holder = AccountNonceHolder(sender_on_network.nonce)
-    transaction.nonce = nonce_holder.get_nonce_then_increment()
+    transaction.nonce = sender.nonce_holder.get_nonce_then_increment()
     
     # Sign the transaction
     transaction_computer = TransactionComputer()
@@ -124,9 +248,10 @@ def saveTxnList(txnHashList,t):
     Save the transaction hash
     """
     os.makedirs("./user_wallets", exist_ok=True)
+    txnHashList=set(txnHashList)
     f=open(f"./user_wallets/txn_list.csv","a")
     for hash in txnHashList:
-        f.write(f"{hash},{t},-1,-1\n")
+        f.write(f"{hash},{t},0,0\n")
     f.close()
 
 def updateTxnList():
@@ -145,22 +270,15 @@ def updateTxnList():
         p,c=measureTime(txnHash)
         f.write(f"{txnHash},{t},{p},{c}\n")
     f.close()
+    print("Transactions Updated Successfully")
     
-def printTxnListDetails():
+def printTxnListDetails(txnHash):
     """
     Print the transaction(s) details
     """
-    print("Printing Transactions Details :: ")
-    try:
-        f=open(f"./user_wallets/txn_list.csv","r")
-    except:
-        return
-    txns=f.readlines()
-    f.close()
-    for txn in txns:
-        txnHash,t,p,c=txn.strip().split(",")
-        url = f"{os.getenv('PROXY_NETWORK')}/v1.0/transaction/{txnHash}?withResults=true"
-        response = requests.get(url)
+    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    tx_on_network = provider.get_transaction(txnHash)
+    print(tx_on_network.to_dictionary())
 
 def printTxnListTimestamp():
     """
@@ -176,4 +294,3 @@ def printTxnListTimestamp():
     for txn in txns:
         txnHash,t,p,c=txn.strip().split(",")
         print(txnHash,"::",t,"->",p,"->",c)
-    

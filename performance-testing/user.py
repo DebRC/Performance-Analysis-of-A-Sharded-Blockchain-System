@@ -2,7 +2,7 @@ from multiversx_sdk_network_providers import *
 from multiversx_sdk_wallet import *
 from multiversx_sdk_core import *
 from collections import defaultdict
-import os, random,requests
+import os,random,requests,json
 from dotenv import load_dotenv
 from wallet import *
 
@@ -14,20 +14,24 @@ class Users:
         self.validatorsAccount = []
         
     def initiateValidatorsAccount(self):
-        f=open(os.getenv("PATH_TO_VALIDATOR_WALLET"),"r")
-        validatorAccountList=[]
-        for line in f:
-            if line.startswith("-----BEGIN PRIVATE KEY"):
-                bech32=(line.removeprefix("-----BEGIN PRIVATE KEY for ")).removesuffix("-----\n")
-                validatorAccountList.append(bech32)
-        f.close()
+        with open(os.getenv("PATH_TO_VALIDATOR_WALLET_ADDRESS"), "r") as f:
+            data = json.load(f)
+            validatorAccountList = [item['address'] for item in data]
         for i in range(len(validatorAccountList)):
             user=User()
             user.username=f"v{i}_account"
             user.address=Address.new_from_bech32(validatorAccountList[i])
-            user.signer = UserSigner.from_pem_file(Path(os.getenv("PATH_TO_VALIDATOR_WALLET")),index=i)
+            user.signer = UserSigner.from_pem_file(Path(os.getenv("PATH_TO_VALIDATOR_WALLET_KEY")),index=i)
             user.secret_key=user.signer.secret_key.hex()
             user.public_key=user.signer.secret_key.generate_public_key().hex()
+            
+            # Get the proxy network provider
+            provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+            
+            # Get the nonce of the txn sender
+            user_on_network = provider.get_account(user.address)
+            user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
+                    
             self.validatorsAccount.append(user)
             
     def initiateOldUsers(self):
@@ -41,6 +45,14 @@ class Users:
                     user.signer = UserSigner.from_pem_file(Path(f"./user_wallets/{username}_wallet.pem"))
                     user.secret_key=user.signer.secret_key.hex()
                     user.public_key=user.signer.secret_key.generate_public_key().hex()
+                    
+                    # Get the proxy network provider
+                    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+                    
+                    # Get the nonce of the txn sender
+                    user_on_network = provider.get_account(user.address)
+                    user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
+                    
                     self.usersAccount.append(user)
         except FileNotFoundError:
             return
@@ -54,15 +66,41 @@ class Users:
         user.public_key = pemWallet.public_key.hex()
         user.signer = UserSigner.from_pem_file(Path(f"./user_wallets/{username}_wallet.pem"))
         fundWallet(self, user)
+        
+        # Get the proxy network provider
+        provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+        
+        # Get the nonce of the txn sender
+        user_on_network = provider.get_account(user.address)
+        user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
+        
         return user
     
     def createUsers(self, num=1):
+        # Can create a maximum of 100 accounts at a time
+        num=min(100,num)
+        
+        print(f"Creating {num} users...")
+        
         for _ in range(num):
-            username=str(random.randint(1,9999))
+            username=str(random.randint(1,999999))
             user=self.__generateUser(username)
             self.usersAccount.append(user)
             self.saveUser(user)
             print(f"User :: {username} created successfully")
+        print(f"Number of users created :: {num}")
+            
+    def refreshNonce(self):
+        # Get the proxy network provider
+        provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+        
+        # Get the nonce of the txn sender
+        for user in self.usersAccount:
+            user_on_network = provider.get_account(user.address)
+            user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
+        for user in self.validatorsAccount:
+            user_on_network = provider.get_account(user.address)
+            user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
             
     def saveUser(self, user):
         os.makedirs("./user_wallets", exist_ok=True)
@@ -108,6 +146,7 @@ class User:
         self.secret_key=None
         self.public_key=None
         self.signer=None
+        self.nonce_holder=None
        
     def getShardID(self):
         url = f"{os.getenv('PROXY_NETWORK')}/v1.0/address/{self.address.to_bech32()}/shard"

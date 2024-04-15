@@ -1,25 +1,53 @@
-import requests, os
+from multiversx_sdk_network_providers import *
+import os
 
 def measureTime(txnHash):
-    url = f"{os.getenv('PROXY_NETWORK')}/v1.0/transaction/{txnHash}?withResults=true"
-    response = requests.get(url)
-    p=c=-1
-    if response.status_code == 200:
-        res=response.json()['data']["transaction"]
-        if "blockHash" in res:
-            p=res["timestamp"]
-        if "notarizedAtDestinationInMetaHash" in res:
-            c=getConfirmationTime(res["notarizedAtDestinationInMetaHash"])
-    else:
-        print("Error in Getting Time:", response.status_code)
+    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    tx_on_network = provider.get_transaction(txnHash)
+    txn=tx_on_network.to_dictionary()
+    p=txn["timestamp"]
+    c=0
+    if txn["hyperblockHash"]!='':
+        c=(provider.get_hyperblock(txn["hyperblockHash"]))["timestamp"]
     return p,c
+    
+def calculateTPR():
+    try:
+        f=open(f"./user_wallets/txn_list.csv","r")
+    except:
+        return 0
+    txns=f.readlines()
+    f.close()
+    if not txns:
+        return 0
+    t,p,c=map(float, (txns[0].strip().split(","))[1:])
+    minTime=t
+    maxTime=p
+    for txn in txns:
+        t,p,c=map(float, (txn.strip().split(","))[1:])
+        if p==-1:
+            continue
+        minTime=min(minTime,t)
+        maxTime=max(maxTime,p)
+    return len(txns)/(maxTime-minTime)
         
-def getConfirmationTime(hyperBlockHash):
-    url = f"{os.getenv('PROXY_NETWORK')}/v1.0/hyperblock/by-hash/{hyperBlockHash}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        res=response.json()['data']["hyperblock"]
-        return res["timestamp"]
-    else:
-        print("Error in getting Confirmation Time:", response.status_code)
-        return -1
+        
+def calculateTCR():
+    try:
+        f=open(f"./user_wallets/txn_list.csv","r")
+    except:
+        return 0
+    txns=f.readlines()
+    f.close()
+    if not txns:
+        return 0
+    t,p,c=map(float, (txns[0].strip().split(","))[1:])
+    minTime=t
+    maxTime=c
+    for txn in txns:
+        t,p,c=map(float, (txn.strip().split(","))[1:])
+        if c==-1:
+            continue
+        minTime=min(minTime,t)
+        maxTime=max(maxTime,c)
+    return len(txns)/(maxTime-minTime)

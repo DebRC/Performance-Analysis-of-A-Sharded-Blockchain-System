@@ -2,7 +2,7 @@ from multiversx_sdk_network_providers import *
 from multiversx_sdk_wallet import *
 from multiversx_sdk_core import *
 from pathlib import Path
-import os, random
+import os, random, time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,9 +21,8 @@ def fundWallet(users,receiver):
     selectedValidator=random.choice(users.validatorsAccount)
     txn=prepareFunding(selectedValidator, receiver)
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
-    hashes = provider.send_transactions([txn])
-    print(f"{receiver.username} wallet funded successfully")
-    return list(hashes[1].values())
+    hash = provider.send_transaction(txn)
+    # print(f"{receiver.username} wallet funded successfully with transaction hash :: {hash}")
 
 def saveWallet(userPEM: UserPEM, username: str):
     os.makedirs("./user_wallets", exist_ok=True)
@@ -40,18 +39,12 @@ def prepareFunding(sender, receiver):
     transaction = Transaction(
         sender=sender.address.to_bech32(),
         receiver=receiver.address.to_bech32(),
-        value=99900000000000000000000,
-        gas_limit=7000000000,
+        value=int(os.getenv('FUND_VALUE')),
+        gas_limit=int(os.getenv('GAS_LIMIT')),
         chain_id="local-testnet",
     )
     
-    # Get the proxy network provider
-    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
-    
-    # Get the nonce of the txn sender
-    sender_on_network = provider.get_account(sender.address)
-    nonce_holder = AccountNonceHolder(sender_on_network.nonce)
-    transaction.nonce = nonce_holder.get_nonce_then_increment()
+    transaction.nonce = sender.nonce_holder.get_nonce_then_increment()
     
     # Sign the transaction
     transaction_computer = TransactionComputer()
