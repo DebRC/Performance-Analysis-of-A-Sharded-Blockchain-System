@@ -16,24 +16,29 @@ nodes.initiateNodes()
 
 while(True):
     print()
-    print("Enter 1 to Create Users")
-    print("Enter 2 to Print Accounts")
-    print("Enter 3 to Print Accounts by Shard")
-    print("Enter 4 to Print Accounts Balance")
-    print("Enter 5 to Print Nodes")
-    print("Enter 6 to Print Nodes by Shard")
-    print("Enter 7 to Send Transaction")
-    print("Enter 8 to Update Transactions Details")
-    print("Enter 9 to Print Sent Transactions Timestamp")
-    print("Enter 10 to Print Sent Transactions Details")
-    print("Enter 11 to print TPR")
-    print("Enter 12 to print TCR")
-    print("Enter 13 to Send Max Number of Transactions")
-    print("Enter 14 to exit")
+    print("--------------------------------")
+    print("1. Create Accounts")
+    print("2. Print Accounts")
+    print("3. Print Accounts by Shard")
+    print("4. Print Accounts Balance")
+    print("--------------------------------")
+    print("5. Print Nodes")
+    print("6. Print Nodes by Shard")
+    print("--------------------------------")
+    print("7. Send Transaction")
+    print("8. Update Transactions Timestamp in CSV")
+    print("9. Print Sent Transactions Timestamp")
+    print("10. Print a Transactions Detail")
+    print("--------------------------------")
+    print("11. Print TPS")
+    print("12. Print TCS")
+    print("--------------------------------")
+    print("13. Exit")
+    print("--------------------------------")
     choice = int(input("Enter Your Choice :: "))
     print()
     if choice == 1:
-        n=int(input("Enter number of users to create :: "))
+        n=int(input("Enter number of accounts to create :: "))
         users.createUsers(n)
     elif choice == 2:
         users.printAccounts()
@@ -49,14 +54,25 @@ while(True):
         print("1. Send Mixed Transaction")
         print("2. Send Intra-Shard Transaction")
         print("3. Send Cross-Shard Transaction")
+        print("4. Send Transaction from an Account")
+        print("5. Send Max Number of Transactions")
         x=int(input("Enter the type of transaction :: "))
-        n=int(input("Enter number of transactions :: "))
+        print()
         if x==1:
+            n=int(input("Enter number of transactions :: "))
             sendTxn(users, n)
         elif x==2:
+            n=int(input("Enter number of transactions :: "))
             sendIntraShardTxn(users, n)
         elif x==3:
+            n=int(input("Enter number of transactions :: "))
             sendCrossShardTxn(users, n)
+        elif x==4:
+            username=input("Enter the account username :: ")
+            n=int(input("Enter number of transactions :: "))
+            sendTxnFromAddress(users,username,n)
+        elif x==5:
+            sendMaxTxns(users)
         else:
             print("Invalid choice")
             continue
@@ -68,12 +84,10 @@ while(True):
         txnHash=input("Enter the transaction hash :: ")
         printTxnListDetails(txnHash)
     elif choice == 11:
-        print("TPR ::",calculateTPR())
+        print("TPS ::",calculateTPS())
     elif choice == 12:
-        print("TCR ::",calculateTCR())
+        print("TCS ::",calculateTCS())
     elif choice == 13:
-        sendMaxTxns(users)
-    elif choice == 14:
         break
     else:
         print("Invalid choice")

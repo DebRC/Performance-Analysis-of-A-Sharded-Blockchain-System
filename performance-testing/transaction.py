@@ -9,6 +9,57 @@ from performance import *
 
 load_dotenv()
 
+def sendTxnFromAddress(users, senderUsername, numOfTxn=1):
+    """
+    Sends transaction(s) from a particular address
+    """
+    # Limit the number of transactions to max nonce
+    numOfTxn=min(numOfTxn,int(os.getenv("MAX_NONCE")))
+    
+    print(f"Sending {numOfTxn} Transactions...")
+    
+    # Get all the accounts
+    accounts = users.usersAccount+users.validatorsAccount
+    
+    # Get the sender using the username
+    sender=None
+    for user in accounts:
+        if user.username == senderUsername:
+            sender = user
+            break
+    
+    if not sender:
+        print("Sender not found")
+        return
+    
+    txns=[]
+    for _  in range(numOfTxn):
+        # Select a random receiver
+        receiver: User = random.choice(accounts)
+        while sender == receiver:
+            receiver = random.choice(accounts)
+    
+        # Prepare the transaction
+        txns.append(prepareTxn(sender, receiver))
+    
+    # Get the proxy network provider
+    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
+    hashes = provider.send_transactions(txns)
+    
+    # Comment if performance script running in different machine
+    # time.sleep(int(os.getenv("SLEEP_TIME")))
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+    
+    # Comment if performance script running in different machine
+    # updateTxnList()
+    
+    print(f"Number of transactions sent successfully :: {hashes[0]}") 
+
 def sendTxn(users: Users, numOfTxn=1):
     """
     Sends transaction(s) 
@@ -55,13 +106,13 @@ def sendTxn(users: Users, numOfTxn=1):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    time.sleep(30)
+    time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
     
     # Comment if performance script running in different machine
-    updateTxnList()
+    # updateTxnList()
     
     print(f"Number of transactions sent successfully :: {hashes[0]}") 
 
@@ -115,17 +166,17 @@ def sendIntraShardTxn(users: Users, numOfTxn=1):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    time.sleep(30)
+    time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
     
     # Comment if performance script running in different machine
-    updateTxnList()
+    # updateTxnList()
     
     print(f"Number of transactions sent successfully :: {hashes[0]}")
 
-def sendCrossShardTxn(users, numOfTxn=1):
+def sendCrossShardTxn(users: Users, numOfTxn=1):
     """
     Sends a transaction between any two random users
     of different shards chosen randomly
@@ -172,17 +223,17 @@ def sendCrossShardTxn(users, numOfTxn=1):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    time.sleep(30)
+    time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
 
     # Comment if performance script running in different machine
-    updateTxnList()
+    # updateTxnList()
     
     print(f"Number of transactions sent successfully :: {hashes[0]}")
 
-def sendMaxTxns(users):
+def sendMaxTxns(users: Users):
     """
     Sends maximum number of transactions
     """
@@ -212,7 +263,91 @@ def sendMaxTxns(users):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    # time.sleep(30)
+    time.sleep(int(os.getenv("SLEEP_TIME")))
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+
+    # Comment if performance script running in different machine
+    # updateTxnList()
+    
+    print(f"Number of transactions sent successfully :: {hashes[0]}")
+
+def sendMaxIntraShardTxns(users: Users):
+    """
+    Sends maximum number of transactions
+    """
+    print("Sending Maximum Number of Intra-Shard Transactions...")
+    
+    accountsByShard = users.returnAccountsByShard()
+    
+    txns=[]
+    
+    # Take each sender
+    for shard in accountsByShard:
+        for account in shard:
+            # Send maximum number of transactions
+            for _ in range(int(os.getenv("MAX_NONCE"))):
+                # Select a random receiver
+                receiver: User = random.choice(accountsByShard[shard])
+                while account == receiver:
+                    receiver = random.choice(accountsByShard[shard])
+                    
+                # Prepare the transaction
+                txns.append(prepareTxn(account, receiver))
+            
+    # Get the proxy network provider
+    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
+    hashes = provider.send_transactions(txns)
+    
+    # Comment if performance script running in different machine
+    # time.sleep(int(os.getenv("SLEEP_TIME")))
+    
+    # Save the transaction hash
+    saveTxnList(list(hashes[1].values()),t)
+
+    # Comment if performance script running in different machine
+    # updateTxnList()
+    
+    print(f"Number of transactions sent successfully :: {hashes[0]}")
+
+def sendMaxCrossShardTxns(users: Users):
+    """
+    Sends maximum number of transactions
+    """
+    print("Sending Maximum Number of Cross-Shard Transactions...")
+
+    # Get all the accounts
+    accounts = users.usersAccount+users.validatorsAccount
+    txns=[]
+    
+    # Take each sender
+    for sender in accounts:
+        # Send maximum number of transactions
+        for _ in range(int(os.getenv("MAX_NONCE"))):
+            # Select a random receiver
+            receiver: User = random.choice(accounts)
+            
+            # Select a random receiver
+            receiver: User = random.choice(accounts)
+            while sender.getShardID() == receiver.getShardID():
+                receiver = random.choice(accounts)
+
+            # Prepare the transaction
+            txns.append(prepareTxn(sender, receiver))
+            
+    # Get the proxy network provider
+    provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    
+    # Send the transactions
+    t=time.time()
+    hashes = provider.send_transactions(txns)
+    
+    # Comment if performance script running in different machine
+    # time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
@@ -264,11 +399,15 @@ def updateTxnList():
         return
     txns=f.readlines()
     f.close()
-    f=open(f"./user_wallets/txn_list.csv","w")
+    
+    lines=[]
     for txn in txns:
         txnHash,t,p,c=txn.strip().split(",")
         p,c=measureTime(txnHash)
-        f.write(f"{txnHash},{t},{p},{c}\n")
+        lines.append(f"{txnHash},{t},{p},{c}\n")
+        
+    f=open(f"./user_wallets/txn_list.csv","w")
+    f.writelines(lines)
     f.close()
     print("Transactions Updated Successfully")
     
