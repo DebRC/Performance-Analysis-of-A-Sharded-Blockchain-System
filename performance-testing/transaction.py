@@ -50,7 +50,7 @@ def sendTxnFromAddress(users, senderUsername, numOfTxn=1):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    # time.sleep(int(os.getenv("SLEEP_TIME")))
+    time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
@@ -306,7 +306,7 @@ def sendMaxIntraShardTxns(users: Users):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    # time.sleep(int(os.getenv("SLEEP_TIME")))
+    time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
@@ -349,7 +349,7 @@ def sendMaxCrossShardTxns(users: Users):
     hashes = provider.send_transactions(txns)
     
     # Comment if performance script running in different machine
-    # time.sleep(int(os.getenv("SLEEP_TIME")))
+    time.sleep(int(os.getenv("SLEEP_TIME")))
     
     # Save the transaction hash
     saveTxnList(list(hashes[1].values()),t)
