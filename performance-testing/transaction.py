@@ -124,11 +124,13 @@ def sendIntraShardTxn(users: Users, numOfTxn=1):
     print(f"Sending {numOfTxn} Intra-Shard Transactions...")
     txns=[]
     
+    # Get user list by shard
+    usersByShard = users.returnAccountsByShard()
+    
     # Map for counting no of transactions (nonce) sent per account
     nonceCount=defaultdict(int)
     for _ in range(numOfTxn):
         # Get a random shard to pick up accounts from
-        usersByShard = users.returnAccountsByShard()
         getRandomShard = random.choice(list(usersByShard.keys()))
         
         # Check if there are atleast 2 users in the shard
