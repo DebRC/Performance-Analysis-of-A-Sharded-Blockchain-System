@@ -13,6 +13,7 @@ nodes = Nodes()
 nodes.initiateNodes()
 
 # sendTxnFromSender(users)
+users.refreshNonce()
 
 while(True):
     print()
@@ -26,9 +27,9 @@ while(True):
     print("6. Print Nodes by Shard")
     print("--------------------------------")
     print("7. Send Transaction")
-    print("8. Update Transactions Timestamp in CSV")
-    print("9. Print Sent Transactions Timestamp")
-    print("10. Print a Transactions Detail")
+    print("8. Update Transactions Details in CSV")
+    print("9. Print all Transactions Detail")
+    print("10. Print a single Transaction Detail")
     print("--------------------------------")
     print("11. Print TPS")
     print("12. Print TCS")
@@ -56,6 +57,8 @@ while(True):
         print("3. Send Cross-Shard Transaction")
         print("4. Send Transaction from an Account")
         print("5. Send Max Number of Transactions")
+        print("6. Send Max Number of Intra-Shard Transactions")
+        print("7. Send Max Number of Cross-Shard Transactions")
         x=int(input("Enter the type of transaction :: "))
         print()
         if x==1:
@@ -73,16 +76,20 @@ while(True):
             sendTxnFromAddress(users,username,n)
         elif x==5:
             sendMaxTxns(users)
+        elif x==6:
+            sendMaxIntraShardTxns(users)
+        elif x==7:
+            sendMaxCrossShardTxns(users)
         else:
             print("Invalid choice")
             continue
     elif choice == 8:
-        updateTxnList()
+        updateTxnDetails()
     elif choice == 9:
-        printTxnListTimestamp()
+        printAllTxnDetails()
     elif choice == 10:
         txnHash=input("Enter the transaction hash :: ")
-        printTxnListDetails(txnHash)
+        printSingleTxnDetails(txnHash)
     elif choice == 11:
         print("TPS ::",calculateTPS())
     elif choice == 12:

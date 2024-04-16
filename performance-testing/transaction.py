@@ -188,6 +188,7 @@ def sendCrossShardTxn(users: Users, numOfTxn=1):
     
     # Get all the accounts
     accounts = users.usersAccount+users.validatorsAccount
+    accountsByShard = users.returnAccountsByShard()
     
     # Map for counting no of transactions (nonce) sent per account
     nonceCount=defaultdict(int)
@@ -197,17 +198,21 @@ def sendCrossShardTxn(users: Users, numOfTxn=1):
         
         # Check if the sender has reached the maximum nonce
         tries=0
-        while(nonceCount[sender.username]==int(os.getenv("MAX_NONCE")) and tries<10):
+        while(nonceCount[sender.username]==int(os.getenv("MAX_NONCE")) and tries<100):
             # Select a new sender
             sender: User = random.choice(accounts)
             tries+=1
-        if tries==10:
+        if tries==100:
             continue
         
+        senderShardID=sender.getShardID()
         # Select a random receiver
-        receiver: User = random.choice(accounts)
-        while sender.getShardID() == receiver.getShardID():
-            receiver = random.choice(accounts)
+        receiverShardID=random.choice(list(accountsByShard.keys()))
+
+        while senderShardID==receiverShardID:
+            receiverShardID=random.choice(list(accountsByShard.keys()))
+        
+        receiver = random.choice(accountsByShard[receiverShardID])
         
         # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
         
@@ -287,7 +292,8 @@ def sendMaxIntraShardTxns(users: Users):
     
     # Take each sender
     for shard in accountsByShard:
-        for account in shard:
+        count=0
+        for account in accountsByShard[shard]:
             # Send maximum number of transactions
             for _ in range(int(os.getenv("MAX_NONCE"))):
                 # Select a random receiver
@@ -297,6 +303,8 @@ def sendMaxIntraShardTxns(users: Users):
                     
                 # Prepare the transaction
                 txns.append(prepareTxn(account, receiver))
+                count+=1
+        print("Shard :",shard,":: Transaction :",count)
             
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
@@ -323,23 +331,24 @@ def sendMaxCrossShardTxns(users: Users):
     print("Sending Maximum Number of Cross-Shard Transactions...")
 
     # Get all the accounts
-    accounts = users.usersAccount+users.validatorsAccount
+    accountsByShard = users.returnAccountsByShard()
+    
     txns=[]
     
     # Take each sender
-    for sender in accounts:
-        # Send maximum number of transactions
-        for _ in range(int(os.getenv("MAX_NONCE"))):
-            # Select a random receiver
-            receiver: User = random.choice(accounts)
-            
-            # Select a random receiver
-            receiver: User = random.choice(accounts)
-            while sender.getShardID() == receiver.getShardID():
-                receiver = random.choice(accounts)
+    for shard in accountsByShard:
+        for sender in accountsByShard[shard]:
+            # Send maximum number of transactions
+            for _ in range(int(os.getenv("MAX_NONCE"))):
+                # Select a random receiver
+                receiverShardID=random.choice(list(accountsByShard.keys()))
+                while shard==receiverShardID:
+                    receiverShardID=random.choice(list(accountsByShard.keys()))
+                
+                receiver = random.choice(accountsByShard[receiverShardID])
 
-            # Prepare the transaction
-            txns.append(prepareTxn(sender, receiver))
+                # Prepare the transaction
+                txns.append(prepareTxn(sender, receiver))
             
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
@@ -388,10 +397,13 @@ def saveTxnList(txnHashList,t):
     txnHashList=set(txnHashList)
     f=open(f"./user_wallets/txn_list.csv","a")
     for hash in txnHashList:
-        f.write(f"{hash},{t},0,0\n")
+        txnDetails={}
+        txnDetails["txnHash"]=hash
+        txnDetails["txnSentTime"]=t
+        f.write(json.dumps(txnDetails)+"\n")
     f.close()
 
-def updateTxnList():
+def updateTxnDetails():
     """
     Update the transaction list
     """
@@ -404,16 +416,20 @@ def updateTxnList():
     
     lines=[]
     for txn in txns:
-        txnHash,t,p,c=txn.strip().split(",")
-        p,c=measureTime(txnHash)
-        lines.append(f"{txnHash},{t},{p},{c}\n")
+        txnDetails=json.loads(txn)
         
+        updatedTxnDetails={}
+        updatedTxnDetails["txnHash"]=txnDetails["txnHash"]
+        updatedTxnDetails["txnSentTime"]=txnDetails["txnSentTime"]
+        updatedTxnDetails.update(getTxnDetails(txnDetails["txnHash"]))
+        
+        lines.append(json.dumps(updatedTxnDetails)+"\n")        
     f=open(f"./user_wallets/txn_list.csv","w")
     f.writelines(lines)
     f.close()
     print("Transactions Updated Successfully")
     
-def printTxnListDetails(txnHash):
+def printSingleTxnDetails(txnHash):
     """
     Print the transaction(s) details
     """
@@ -421,7 +437,7 @@ def printTxnListDetails(txnHash):
     tx_on_network = provider.get_transaction(txnHash)
     print(tx_on_network.to_dictionary())
 
-def printTxnListTimestamp():
+def printAllTxnDetails():
     """
     Print the transaction(s) timestamp
     """
@@ -433,5 +449,4 @@ def printTxnListTimestamp():
     txns=f.readlines()
     f.close()
     for txn in txns:
-        txnHash,t,p,c=txn.strip().split(",")
-        print(txnHash,"::",t,"->",p,"->",c)
+        print(txn)

@@ -10,13 +10,21 @@ load_dotenv()
 
 class Users:
     def __init__(self):
+        # Lists for account of users and validators
         self.usersAccount = []
         self.validatorsAccount = []
         
     def initiateValidatorsAccount(self):
+        """
+        Function which initiates validators account
+        """
+        
+        # Load validator's account list
         with open(os.getenv("PATH_TO_VALIDATOR_WALLET_ADDRESS"), "r") as f:
             data = json.load(f)
             validatorAccountList = [item['address'] for item in data]
+            
+        # Create account object from the list
         for i in range(len(validatorAccountList)):
             user=User()
             user.username=f"v{i}_account"
@@ -28,17 +36,23 @@ class Users:
             # Get the proxy network provider
             provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
             
-            # Get the nonce of the txn sender
+            # Get the nonce of the user
             user_on_network = provider.get_account(user.address)
             user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
-                    
+            
+            # Add it to validators list
             self.validatorsAccount.append(user)
             
     def initiateOldUsers(self):
+        """
+        Function which loads old user accounts
+        """
         try:
+            # Load user lists
             with open("./user_wallets/user_list.csv", "r") as f:
                 for line in f:
                     username, address = line.strip().split(",")
+                    # Create user object
                     user = User()
                     user.username=username
                     user.address=Address.new_from_bech32(address)
@@ -49,15 +63,19 @@ class Users:
                     # Get the proxy network provider
                     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
                     
-                    # Get the nonce of the txn sender
+                    # Get the nonce of the user
                     user_on_network = provider.get_account(user.address)
                     user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
                     
+                    # Add it to users list
                     self.usersAccount.append(user)
         except FileNotFoundError:
             return
     
     def __generateUser(self, username):
+        """
+        Private function which generates an user wallet
+        """
         user=User()
         user.username = username
         pemWallet=generateWallet(username)
@@ -77,6 +95,9 @@ class Users:
         return user
     
     def createUsers(self, num=1):
+        """
+        Function creates n num of txn
+        """
         # Can create a maximum of 100 accounts at a time
         num=min(100,num)
         
@@ -119,11 +140,15 @@ class Users:
     def printAccountsByShard(self):
         print("Printing Accounts by Shard :: ")
         accountsByShard = self.returnAccountsByShard()
+        countAccounts = {}
         for shardID in accountsByShard:
             print(shardID, end=" :: ")
+            countAccounts[shardID] = len(accountsByShard[shardID])
             for user in accountsByShard[shardID]:
                 print(user.username, end=" ")
             print()
+        for shardID in countAccounts:
+            print(f"Total Accounts in Shard {shardID} :: {countAccounts[shardID]}")
         
     def printAccountsBalance(self):
         print("Printing Accounts Balance :: ")
