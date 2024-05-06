@@ -25,8 +25,8 @@ def fundWallet(users,receiver):
     # print(f"{receiver.username} wallet funded successfully with transaction hash :: {hash}")
 
 def saveWallet(userPEM: UserPEM, username: str):
-    os.makedirs("./user_wallets", exist_ok=True)
-    path="./user_wallets/{0}_wallet.pem".format(username)
+    os.makedirs(os.getenv("LOG_FOLDER")+"/user_wallets", exist_ok=True)
+    path=os.getenv("LOG_FOLDER")+"user_wallets/{0}_wallet.pem".format(username)
     userPEM.save(Path(path))
     return path
 

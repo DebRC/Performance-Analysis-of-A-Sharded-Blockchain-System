@@ -4,18 +4,18 @@
 export OBSERVERS_ANTIFLOOD_DISABLE=1
 
 # Shard structure
-export SHARDCOUNT=2
-export SHARD_VALIDATORCOUNT=3
-export SHARD_OBSERVERCOUNT=1
-export SHARD_CONSENSUS_SIZE=3
+export SHARDCOUNT=5
+export SHARD_VALIDATORCOUNT=5
+export SHARD_OBSERVERCOUNT=3
+export SHARD_CONSENSUS_SIZE=5
 
 # Metashard structure
-# export META_VALIDATORCOUNT=5
-# export META_OBSERVERCOUNT=1
-# export META_CONSENSUS_SIZE=$META_VALIDATORCOUNT
+export META_VALIDATORCOUNT=5
+export META_OBSERVERCOUNT=3
+export META_CONSENSUS_SIZE=$META_VALIDATORCOUNT
 
 # ROUNDS_PER_EPOCH represents the number of rounds per epoch. If set to 0, it won't override the node's config
-# export ROUNDS_PER_EPOCH=100
+export ROUNDS_PER_EPOCH=100
 export ROUND_DURATION=6000
 
 # HYSTERESIS defines the hysteresis value for number of nodes in shard

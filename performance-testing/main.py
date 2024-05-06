@@ -31,8 +31,8 @@ while(True):
     print("9. Print all Transactions Detail")
     print("10. Print a single Transaction Detail")
     print("--------------------------------")
-    print("11. Print TPS")
-    print("12. Print TCS")
+    print("11. Get All Miniblocks by Round")
+    print("12. Print Throughput")
     print("--------------------------------")
     print("13. Exit")
     print("--------------------------------")
@@ -90,10 +90,16 @@ while(True):
     elif choice == 10:
         txnHash=input("Enter the transaction hash :: ")
         printSingleTxnDetails(txnHash)
-    elif choice == 11:
-        print("TPS ::",calculateTPS())
+    elif choice==11:
+        startRound=int(input("Enter the Start Round :: "))
+        endRound=int(input("Enter the End Round :: "))
+        mbs = getMiniBlocksByRound(startRound,endRound)
+        for mb in mbs:
+            print(mbs[mb])
     elif choice == 12:
-        print("TCS ::",calculateTCS())
+        startRound=int(input("Enter the Start Round :: "))
+        endRound=int(input("Enter the End Round :: "))
+        print(getThroughput(startRound,endRound))
     elif choice == 13:
         break
     else:

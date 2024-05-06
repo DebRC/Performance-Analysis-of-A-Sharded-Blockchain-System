@@ -49,14 +49,14 @@ class Users:
         """
         try:
             # Load user lists
-            with open("./user_wallets/user_list.csv", "r") as f:
+            with open(os.getenv("LOG_FOLDER")+"user_list.csv", "r") as f:
                 for line in f:
                     username, address = line.strip().split(",")
                     # Create user object
                     user = User()
                     user.username=username
                     user.address=Address.new_from_bech32(address)
-                    user.signer = UserSigner.from_pem_file(Path(f"./user_wallets/{username}_wallet.pem"))
+                    user.signer = UserSigner.from_pem_file(Path(os.getenv("LOG_FOLDER")+f"user_wallets/{username}_wallet.pem"))
                     user.secret_key=user.signer.secret_key.hex()
                     user.public_key=user.signer.secret_key.generate_public_key().hex()
                     
@@ -82,7 +82,7 @@ class Users:
         user.address=Address.new_from_bech32(pemWallet.public_key.to_address("erd").to_bech32())
         user.secret_key = pemWallet.secret_key.hex()
         user.public_key = pemWallet.public_key.hex()
-        user.signer = UserSigner.from_pem_file(Path(f"./user_wallets/{username}_wallet.pem"))
+        user.signer = UserSigner.from_pem_file(Path(os.getenv("LOG_FOLDER")+f"user_wallets/{username}_wallet.pem"))
         fundWallet(self, user)
         
         # Get the proxy network provider
@@ -124,8 +124,8 @@ class Users:
             user.nonce_holder = AccountNonceHolder(user_on_network.nonce)
             
     def saveUser(self, user):
-        os.makedirs("./user_wallets", exist_ok=True)
-        f=open(f"./user_wallets/user_list.csv","a")
+        os.makedirs(os.getenv("LOG_FOLDER"), exist_ok=True)
+        f=open(os.getenv("LOG_FOLDER")+"user_list.csv","a")
         f.write(f"{user.username},{user.address.to_bech32()}\n")
         f.close()
 

@@ -1,7 +1,6 @@
 from collections import defaultdict
 from multiversx_sdk_network_providers import *
-import os
-
+import os, requests
 
 def getTxnDetails(txnHash):
     provider = ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
@@ -23,74 +22,56 @@ def getTxnDetails(txnHash):
     txnDetails["blockNonce"] = txn["blockNonce"]
     txnDetails["hyperblockHash"] = txn["hyperblockHash"]
     txnDetails["hyperblockNonce"] = txn["hyperblockNonce"]
-    
+    provider.get_
     # If the transaction is confirmed, get the confirmation time
     if txn["hyperblockHash"] != "":
         txnDetails["hyperblockTimestamp"] = (provider.get_hyperblock(txn["hyperblockHash"]))["timestamp"]
     return txnDetails
 
+def getMiniBlocksByRound(startRound,endRound=None):
+    if not endRound:
+        endRound=startRound
+    provider = ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
+    miniBlocks={}
+    for round in range(startRound,endRound+1):
+        url = f"{os.getenv('PROXY_NETWORK')}/v1.0/blocks/by-round/{round}"
+        response = requests.get(url)
+            
+        blocks=response.json()['data']['blocks']
+        for block in blocks:
+            if block["shard"]==4294967295:
+                for sb in (provider.get_hyperblock(block["hash"]))["shardBlocks"]:
+                    if "miniBlockHashes" not in sb:
+                        continue
+                    for mbhash in sb["miniBlockHashes"]:
+                        if mbhash in miniBlocks:
+                            miniBlocks[mbhash]["round"].append(round)
+            else:
+                if "miniBlocks" not in block:
+                    continue
+                for mb in block["miniBlocks"]:
+                    if mb["hash"] not in miniBlocks:
+                        miniBlocks[mb["hash"]]={
+                            "source":mb["sourceShard"],
+                            "dest":mb["destinationShard"],
+                            "txns":int(mb["indexOfLastTxProcessed"])-int(mb["indexOfFirstTxProcessed"])+1,
+                            "round": [round]
+                        }
+                    else:
+                        miniBlocks[mb["hash"]]["round"].append(round)
+    return miniBlocks
 
-def calculateTPS():
-    try:
-        f = open(f"./user_wallets/txn_list.csv", "r")
-    except:
-        return 0
-    # Get the transactions
-    txns = f.readlines()
-    f.close()
-
-    # If there are no transactions, return 0
-    if not txns:
-        return 0
-
-    # Dictionary which maps a fixed start time
-    # to a list of end times
-    txnDic = defaultdict(list)
-
-    for txn in txns:
-        # t = Start Time
-        # p = Process Time
-        # c = Confirmation Time
-        t, p, c = map(float, (txn.strip().split(","))[1:])
-        txnDic[t].append(p)
-
-    tps = 0
-    for t in txnDic:
-        # (Maximum of Process Time - Start Time) / Number of Transactions at that Interval
-        tps += len(txnDic[t]) / (max(txnDic[t]) - t)
-
-    # Return the average TPS
-    return tps / len(txnDic)
-
-
-def calculateTCS():
-    try:
-        f = open(f"./user_wallets/txn_list.csv", "r")
-    except:
-        return 0
-    # Get the transactions
-    txns = f.readlines()
-    f.close()
-
-    # If there are no transactions, return 0
-    if not txns:
-        return 0
-
-    # Dictionary which maps a fixed start time
-    # to a list of end times
-    txnDic = defaultdict(list)
-
-    for txn in txns:
-        # t = Start Time
-        # p = Process Time
-        # c = Confirmation Time
-        t, p, c = map(float, (txn.strip().split(","))[1:])
-        txnDic[t].append(c)
-
-    tcs = 0
-    for t in txnDic:
-        # (Maximum of Confirm Time - Start Time) / Number of Transactions at that Interval
-        tcs += len(txnDic[t]) / (max(txnDic[t]) - t)
-
-    # Return the average TCS
-    return tcs / len(txnDic)
+def getThroughput(startRound,endRound):
+    miniBlocks=getMiniBlocksByRound(startRound,endRound)
+    txnsProcessed=0
+    txnsConfirmed=0
+    for block in miniBlocks:
+        mb=miniBlocks[block]
+        if mb["source"]==mb["dest"]:
+            txnsProcessed+=mb["txns"]
+            txnsConfirmed+=mb["txns"] if len(mb["round"])==2 else 0
+        else:
+            txnsProcessed+=mb["txns"] if len(mb["round"])==3 else 0
+            txnsConfirmed+=mb["txns"] if len(mb["round"])==4 else 0
+    time=(endRound-startRound+1)*int(os.getenv("ROUND_TIME"))
+    return {"TPS": txnsProcessed/time, "CPS": txnsConfirmed/time}

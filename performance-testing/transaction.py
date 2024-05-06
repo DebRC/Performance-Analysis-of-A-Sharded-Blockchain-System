@@ -124,6 +124,8 @@ def sendIntraShardTxn(users: Users, numOfTxn=1):
     print(f"Sending {numOfTxn} Intra-Shard Transactions...")
     txns=[]
     
+    shardCounts=defaultdict(int)
+    
     # Get user list by shard
     usersByShard = users.returnAccountsByShard()
     
@@ -158,7 +160,11 @@ def sendIntraShardTxn(users: Users, numOfTxn=1):
         
         # Increment the nonce count
         nonceCount[sender.username]+=1
-        # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
+        
+        shardCounts[getRandomShard]+=1
+        
+    for shard in shardCounts:
+        print("Shard :",shard,":: Transaction :",shardCounts[shard])
         
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
@@ -190,6 +196,8 @@ def sendCrossShardTxn(users: Users, numOfTxn=1):
     accounts = users.usersAccount+users.validatorsAccount
     accountsByShard = users.returnAccountsByShard()
     
+    shardCounts=defaultdict(int)
+    
     # Map for counting no of transactions (nonce) sent per account
     nonceCount=defaultdict(int)
     for _ in range(numOfTxn):
@@ -214,13 +222,17 @@ def sendCrossShardTxn(users: Users, numOfTxn=1):
         
         receiver = random.choice(accountsByShard[receiverShardID])
         
-        # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
-        
         # Prepare the transaction
         txns.append(prepareTxn(sender, receiver))
         
         # Increment the nonce count
         nonceCount[sender.username]+=1
+        
+        shardCounts[senderShardID]+=1
+        # print(f"Sender: {sender.username}, Receiver: {receiver.username}")
+    
+    for shard in shardCounts:
+        print("Shard :",shard,":: Transaction :",shardCounts[shard])
     
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
@@ -337,6 +349,7 @@ def sendMaxCrossShardTxns(users: Users):
     
     # Take each sender
     for shard in accountsByShard:
+        count=0
         for sender in accountsByShard[shard]:
             # Send maximum number of transactions
             for _ in range(int(os.getenv("MAX_NONCE"))):
@@ -349,6 +362,9 @@ def sendMaxCrossShardTxns(users: Users):
 
                 # Prepare the transaction
                 txns.append(prepareTxn(sender, receiver))
+                
+                count+=1
+        print("Shard :",shard,":: Transaction :",count)
             
     # Get the proxy network provider
     provider=ProxyNetworkProvider(os.getenv("PROXY_NETWORK"))
@@ -393,9 +409,9 @@ def saveTxnList(txnHashList,t):
     """
     Save the transaction hash
     """
-    os.makedirs("./user_wallets", exist_ok=True)
+    os.makedirs(os.getenv("LOG_FOLDER"), exist_ok=True)
     txnHashList=set(txnHashList)
-    f=open(f"./user_wallets/txn_list.csv","a")
+    f=open(os.getenv("LOG_FOLDER")+"txn_list.csv","a")
     for hash in txnHashList:
         txnDetails={}
         txnDetails["txnHash"]=hash
@@ -408,7 +424,7 @@ def updateTxnDetails():
     Update the transaction list
     """
     try:
-        f=open(f"./user_wallets/txn_list.csv","r")
+        f=open(os.getenv("LOG_FOLDER")+"txn_list.csv","r")
     except:
         return
     txns=f.readlines()
@@ -424,7 +440,7 @@ def updateTxnDetails():
         updatedTxnDetails.update(getTxnDetails(txnDetails["txnHash"]))
         
         lines.append(json.dumps(updatedTxnDetails)+"\n")        
-    f=open(f"./user_wallets/txn_list.csv","w")
+    f=open(os.getenv("LOG_FOLDER")+"txn_list.csv","w")
     f.writelines(lines)
     f.close()
     print("Transactions Updated Successfully")
@@ -443,7 +459,7 @@ def printAllTxnDetails():
     """
     print("Printing Transactions Timestamps :: ")
     try:
-        f=open(f"./user_wallets/txn_list.csv","r")
+        f=open(os.getenv("LOG_FOLDER")+"txn_list.csv","r")
     except:
         return
     txns=f.readlines()
